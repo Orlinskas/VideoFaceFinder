@@ -5,17 +5,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
-import androidx.core.net.toFile
-import com.arthenica.mobileffmpeg.Config
-import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
-import com.arthenica.mobileffmpeg.FFprobe
-import com.arthenica.mobileffmpeg.MediaInformation
 import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.ActivityMainBinding
 import com.orlinskas.videofacefinder.core.BaseActivity
@@ -23,6 +15,8 @@ import com.orlinskas.videofacefinder.data.enums.FileSystemState
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
 import com.orlinskas.videofacefinder.extensions.launchActivity
 import com.orlinskas.videofacefinder.extensions.singleObserve
+import com.orlinskas.videofacefinder.util.FFMPEGSystem.getMediaInfo
+import com.orlinskas.videofacefinder.util.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.util.io
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -49,15 +43,26 @@ class MainActivity : BaseActivity() {
             requestPermission()
         }
 
+        // ffmpeg -i input.mp4 -filter:v fps=fps=1 ffmpeg_%0d.bmp
+        // ffmpeg -i file.mp4 -vf fps=1 %d.jpg
+
         viewModel.onFileReceived = {
             io {
-                val file = viewModel.state.file ?: error("File is null")
-                val filePath = getVideoPath(file.uri) ?: error("Error convert to file from uri")
-                val rc = FFmpeg.execute("-i $filePath")
-                getMediaInfo(file.uri)
+
+                val userFile = viewModel.state.file ?: error("File is null")
+                val filePath = userFile.getAbsolutePath(contentResolver) ?: error("Error convert to file from uri")
+                val internalStoragePath = filesDir.absolutePath
+
+                //getMediaInfo(filePath)
+
+                val command = buildSplitCommand(filePath, internalStoragePath)
+                val rc = FFmpeg.execute(command)
             }
         }
+    }
 
+    private fun buildSplitCommand(videoPath: String, storagePath: String): String {
+        return "-i $videoPath -vf fps=1 $storagePath/%d.jpg"
     }
 
     private fun requestPermission() {
@@ -118,60 +123,6 @@ class MainActivity : BaseActivity() {
 
             startActivityForResult(intent, GALLERY_REQUEST_CODE)
         }
-    }
-
-    fun logExecution(code: Int) {
-        if (code == RETURN_CODE_SUCCESS) {
-            Timber.d("Command execution completed successfully.");
-        } else {
-            Timber.d("Command execution failed with rc=$code.")
-            Config.printLastCommandOutput(Log.DEBUG)
-        }
-    }
-
-    fun getMediaInfo(uri: Uri?): MediaInformation? {
-        if (uri == null) {
-            Timber.e("Uri is null")
-            return null
-        }
-
-        val info = FFprobe.getMediaInformation(getVideoPath(uri))
-        Timber.d(info.allProperties.toString(2))
-        return info
-    }
-
-    fun getVideoPath(uri: Uri?): String? {
-        if (uri == null) {
-            Timber.e("Uri is null")
-            return null
-        }
-
-        var cursor = contentResolver.query(uri, null, null, null, null)
-
-        if (cursor == null) {
-            Timber.e("Cursor is null")
-            return null
-        }
-
-        cursor.moveToFirst()
-        var documentId: String = cursor.getString(0)
-        documentId = documentId.substring(documentId.lastIndexOf(":") + 1)
-        cursor.close()
-
-        cursor = contentResolver.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                null, MediaStore.Video.Media._ID + " = ? ", arrayOf(documentId), null)
-
-        if (cursor == null) {
-            Timber.e("Cursor is null")
-            return null
-        }
-
-        cursor.moveToFirst()
-        val path: String = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
-        cursor.close()
-
-        return path
     }
 
     companion object {

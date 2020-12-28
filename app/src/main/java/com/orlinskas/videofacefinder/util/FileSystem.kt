@@ -3,11 +3,13 @@ package com.orlinskas.videofacefinder.util
 import android.content.ContentResolver
 import android.database.Cursor
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.extensions.removeFirstPathPart
+import timber.log.Timber
 import java.util.*
 
 object FileSystem {
@@ -27,6 +29,15 @@ object FileSystem {
         }
 
         return null
+    }
+
+    fun UserFile.getAbsolutePath(contentResolver: ContentResolver): String? {
+        // TODO other formats
+        // when (this.format) {
+        //
+        // }
+
+        return getVideoPath(this.uri, contentResolver)
     }
 
     private fun getFileName(resolver: ContentResolver, uri: Uri): String {
@@ -67,5 +78,39 @@ object FileSystem {
         } else {
             0L
         }
+    }
+
+    private fun getVideoPath(uri: Uri?, contentResolver: ContentResolver): String? {
+        if (uri == null) {
+            Timber.e("Uri is null")
+            return null
+        }
+
+        var cursor = contentResolver.query(uri, null, null, null, null)
+
+        if (cursor == null) {
+            Timber.e("Cursor is null")
+            return null
+        }
+
+        cursor.moveToFirst()
+        var documentId: String = cursor.getString(0)
+        documentId = documentId.substring(documentId.lastIndexOf(":") + 1)
+        cursor.close()
+
+        cursor = contentResolver.query(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            null, MediaStore.Video.Media._ID + " = ? ", arrayOf(documentId), null)
+
+        if (cursor == null) {
+            Timber.e("Cursor is null")
+            return null
+        }
+
+        cursor.moveToFirst()
+        val path: String = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        cursor.close()
+
+        return path
     }
 }
