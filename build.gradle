@@ -3,6 +3,7 @@ buildscript {
     ext.navigationVersion = '2.3.2'
     ext.ktlintVersion = '0.33.0'
     ext.hiltVersion = '2.30.1-alpha'
+
     repositories {
         google()
         jcenter()
@@ -26,13 +27,10 @@ allprojects {
     }
 }
 
-// Define versions in a single place
 ext {
-    // Sdk and tools
-    // Bumping minSdk to 21 to avoid adding multidex just for androidTests
-    minSdkVersion = 23
-    targetSdkVersion = 30
-    compileSdkVersion = 30
+    minSdkVersion = 24
+    targetSdkVersion = 29
+    compileSdkVersion = 29
 
     // App dependencies
     androidXVersion = '1.0.0'
