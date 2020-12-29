@@ -15,13 +15,11 @@ import com.orlinskas.videofacefinder.data.enums.FileSystemState
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
 import com.orlinskas.videofacefinder.extensions.launchActivity
 import com.orlinskas.videofacefinder.extensions.singleObserve
-import com.orlinskas.videofacefinder.util.FFMPEGSystem.getMediaInfo
 import com.orlinskas.videofacefinder.util.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.util.io
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
@@ -43,26 +41,15 @@ class MainActivity : BaseActivity() {
             requestPermission()
         }
 
-        // ffmpeg -i input.mp4 -filter:v fps=fps=1 ffmpeg_%0d.bmp
-        // ffmpeg -i file.mp4 -vf fps=1 %d.jpg
-
         viewModel.onFileReceived = {
-            io {
+            viewModel.splitVideoFile(contentResolver, filesDir.absolutePath).singleObserve(this) {
+                if (it) {
+                    viewModel.processFrames(filesDir.absolutePath).singleObserve(this) {
 
-                val userFile = viewModel.state.file ?: error("File is null")
-                val filePath = userFile.getAbsolutePath(contentResolver) ?: error("Error convert to file from uri")
-                val internalStoragePath = filesDir.absolutePath
-
-                //getMediaInfo(filePath)
-
-                val command = buildSplitCommand(filePath, internalStoragePath)
-                val rc = FFmpeg.execute(command)
+                    }
+                }
             }
         }
-    }
-
-    private fun buildSplitCommand(videoPath: String, storagePath: String): String {
-        return "-i $videoPath -vf fps=1 $storagePath/%d.jpg"
     }
 
     private fun requestPermission() {

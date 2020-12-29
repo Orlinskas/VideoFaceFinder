@@ -3,11 +3,14 @@ package com.orlinskas.videofacefinder.data
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.orlinskas.videofacefinder.data.dao.FrameDao
 import com.orlinskas.videofacefinder.data.model.DefaultModel
+import com.orlinskas.videofacefinder.data.model.Frame
 
 @Database(
     entities = [
-        DefaultModel::class
+        DefaultModel::class,
+        Frame::class
     ],
     version = 1,
     exportSchema = false
@@ -15,5 +18,5 @@ import com.orlinskas.videofacefinder.data.model.DefaultModel
 //@TypeConverters(TypeConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
-    // dao list
+    abstract fun frameDao(): FrameDao
 }

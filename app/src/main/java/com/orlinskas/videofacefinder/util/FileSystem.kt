@@ -113,4 +113,38 @@ object FileSystem {
 
         return path
     }
+
+    private fun getImagePath(uri: Uri?, contentResolver: ContentResolver): String? {
+        if (uri == null) {
+            Timber.e("Uri is null")
+            return null
+        }
+
+        var cursor = contentResolver.query(uri, null, null, null, null)
+
+        if (cursor == null) {
+            Timber.e("Cursor is null")
+            return null
+        }
+
+        cursor.moveToFirst()
+        var documentId: String = cursor.getString(0)
+        documentId = documentId.substring(documentId.lastIndexOf(":") + 1)
+        cursor.close()
+
+        cursor = contentResolver.query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                null, MediaStore.Images.Media._ID + " = ? ", arrayOf(documentId), null)
+
+        if (cursor == null) {
+            Timber.e("Cursor is null")
+            return null
+        }
+
+        cursor.moveToFirst()
+        val path: String = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        cursor.close()
+
+        return path
+    }
 }

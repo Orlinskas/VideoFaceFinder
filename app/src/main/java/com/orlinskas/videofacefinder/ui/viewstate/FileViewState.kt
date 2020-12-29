@@ -9,6 +9,7 @@ private const val KEY_FILE = "FILE"
 class FileViewState : ViewState {
 
     var file: UserFile? = null
+    var fps = 1
 
     override fun onRestoreState(bundle: Bundle?) {
         super.onRestoreState(bundle)
