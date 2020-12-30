@@ -7,7 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import com.arthenica.mobileffmpeg.FFmpeg
+import androidx.appcompat.app.AlertDialog
 import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.ActivityMainBinding
 import com.orlinskas.videofacefinder.core.BaseActivity
@@ -15,8 +15,6 @@ import com.orlinskas.videofacefinder.data.enums.FileSystemState
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
 import com.orlinskas.videofacefinder.extensions.launchActivity
 import com.orlinskas.videofacefinder.extensions.singleObserve
-import com.orlinskas.videofacefinder.util.FileSystem.getAbsolutePath
-import com.orlinskas.videofacefinder.util.io
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
@@ -42,16 +40,20 @@ class MainActivity : BaseActivity() {
         }
 
         viewModel.onFileReceived = {
-            viewModel.splitVideoFile(contentResolver).singleObserve(this) {
-                if (it) {
-                    viewModel.processFrames().singleObserve(this) {
-                        if (it) {
-                            viewModel.processFaces().singleObserve(this) {
+            if (viewModel.faceDetector.isOperational) {
+                viewModel.splitVideoFile(contentResolver).singleObserve(this) {
+                    if (it) {
+                        viewModel.processFrames().singleObserve(this) {
+                            if (it) {
+                                viewModel.processFaces().singleObserve(this) {
 
+                                }
                             }
                         }
                     }
                 }
+            } else {
+                AlertDialog.Builder(this).setMessage("Wait to load face detector lib").show()
             }
         }
     }
