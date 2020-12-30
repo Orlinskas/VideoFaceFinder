@@ -6,10 +6,12 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import androidx.core.net.toUri
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.extensions.removeFirstPathPart
 import timber.log.Timber
+import java.io.File
 import java.util.*
 
 object FileSystem {
@@ -146,5 +148,24 @@ object FileSystem {
         cursor.close()
 
         return path
+    }
+
+    fun File.toNumber(): Int? {
+
+        var nameWithoutFormat = ""
+
+        val number = try {
+            nameWithoutFormat = name.substringBefore(".")
+            nameWithoutFormat.toIntOrNull()
+        } catch (e: Exception) {
+            Timber.e(e)
+            null
+        }
+
+        if (number == null) {
+            Timber.e("Error convert file name to number $name -> $nameWithoutFormat -> $number")
+        }
+
+        return number
     }
 }

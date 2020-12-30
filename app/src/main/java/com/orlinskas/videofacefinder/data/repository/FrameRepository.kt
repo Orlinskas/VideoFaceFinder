@@ -11,7 +11,16 @@ class FrameRepository @Inject constructor(
     private val frameDao = appDatabase.frameDao()
 
     fun insertFrames(frames: List<Frame>) {
+        frameDao.removeAllFrames()
         frameDao.insertFrames(frames)
+    }
+
+    fun getAllFrames(): List<Frame> {
+        return frameDao.getFrames()
+    }
+
+    fun removeAllFrames() {
+        return frameDao.removeAllFrames()
     }
 
 }

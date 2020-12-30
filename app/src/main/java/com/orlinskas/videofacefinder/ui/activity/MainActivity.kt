@@ -42,10 +42,14 @@ class MainActivity : BaseActivity() {
         }
 
         viewModel.onFileReceived = {
-            viewModel.splitVideoFile(contentResolver, filesDir.absolutePath).singleObserve(this) {
+            viewModel.splitVideoFile(contentResolver).singleObserve(this) {
                 if (it) {
-                    viewModel.processFrames(filesDir.absolutePath).singleObserve(this) {
+                    viewModel.processFrames().singleObserve(this) {
+                        if (it) {
+                            viewModel.processFaces().singleObserve(this) {
 
+                            }
+                        }
                     }
                 }
             }
