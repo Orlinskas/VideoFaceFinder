@@ -43,7 +43,9 @@ class MainActivity : BaseActivity() {
             if (viewModel.faceDetector.isOperational) {
                 viewModel.splitVideoFile(contentResolver) {
                     viewModel.processFrames {
-                        viewModel.processFaces {}
+                        viewModel.processFaces {
+                            viewModel.searchNearest()
+                        }
                     }
                 }
             } else {

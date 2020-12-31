@@ -19,13 +19,12 @@ import com.orlinskas.videofacefinder.data.model.Frame
 import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
 import com.orlinskas.videofacefinder.systems.*
-import com.orlinskas.videofacefinder.tflite.TFLiteObjectDetectionAPIModel
+import com.orlinskas.videofacefinder.tflite.TFLiteClassifier
 import com.orlinskas.videofacefinder.ui.viewstate.FileViewState
 import com.orlinskas.videofacefinder.util.*
 import com.orlinskas.videofacefinder.systems.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.systems.FileSystem.toFileModel
 import com.orlinskas.videofacefinder.systems.FileSystem.toNumber
-import com.orlinskas.videofacefinder.tflite.SimilarityClassifier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.io.*
@@ -43,7 +42,7 @@ class MainViewModel @ViewModelInject constructor(
     var onFileReceived: (() -> (Unit))? = null
 
     var faceDetector: FaceDetector
-    var faceClassifier: SimilarityClassifier
+    var faceClassifier: TFLiteClassifier
 
     // FileSystem constants
     private val FRAME_IMAGES_FOLDER_NAME = "frames"
@@ -65,7 +64,7 @@ class MainViewModel @ViewModelInject constructor(
             setTrackingEnabled(false)
         }.build()
 
-        faceClassifier = TFLiteObjectDetectionAPIModel.create(
+        faceClassifier = TFLiteClassifier.create(
                 context.assets,
                 TF_OD_API_MODEL_FILE,
                 TF_OD_API_LABELS_FILE,
@@ -231,7 +230,7 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    private fun createFaceModel(frame: Frame, bitmaps: List<Bitmap>, classifier: SimilarityClassifier): List<FaceModel> {
+    private fun createFaceModel(frame: Frame, bitmaps: List<Bitmap>, classifier: TFLiteClassifier): List<FaceModel> {
         val operationStartTime = System.currentTimeMillis()
 
         val faceModels = mutableListOf<FaceModel>()
@@ -260,5 +259,25 @@ class MainViewModel @ViewModelInject constructor(
 
         Timber.d("Frame - ${frame.id}. Created models ${faceModels.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
         return faceModels
+    }
+
+    fun searchNearest() {
+        io {
+            val faceModels = faceRepository.getFaces()
+
+            faceModels.forEach { current ->
+                val data = current.data
+
+                val bitmap = ImageSystem.decodeBitmapFromBase64(current.imageBase64)
+                FileSystem.createFileFrom(bitmap!!, FACE_IMAGES_FOLDER_PATH + "/${current.id}.png")
+
+                faceModels.forEach { other ->
+                    val otherData = other.data
+
+                    val result = faceClassifier.findNearest(data, otherData)
+                    Timber.e("Face ${current.id} came close to face ${other.id} by - $result")
+                }
+            }
+        }
     }
 }
