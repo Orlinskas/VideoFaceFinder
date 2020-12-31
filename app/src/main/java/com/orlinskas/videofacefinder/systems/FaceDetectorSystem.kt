@@ -13,13 +13,12 @@ import timber.log.Timber
 object FaceDetectorSystem {
 
     fun findFaces(bitmap: Bitmap, faceDetector: FaceDetector): SparseArray<Face>? {
-        Timber.d("Start detect faces on bitmap")
         val operationStartTime = System.currentTimeMillis()
 
         val detectorFrame = Frame.Builder().setBitmap(bitmap).build()
         val faces = faceDetector.detect(detectorFrame)
 
-        Timber.d("Finish detect faces on bitmap, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+        Timber.d("Detect faces on bitmap, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
 
         return faces
     }

@@ -14,18 +14,18 @@ import com.arthenica.mobileffmpeg.FFmpeg
 import com.google.android.gms.vision.face.FaceDetector
 import com.orlinskas.videofacefinder.core.BaseViewModel
 import com.orlinskas.videofacefinder.data.enums.FileSystemState
+import com.orlinskas.videofacefinder.data.model.FaceModel
 import com.orlinskas.videofacefinder.data.model.Frame
+import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
-import com.orlinskas.videofacefinder.systems.FFMPEGSystem
-import com.orlinskas.videofacefinder.systems.FaceDetectorSystem
-import com.orlinskas.videofacefinder.systems.FileSystem
+import com.orlinskas.videofacefinder.systems.*
 import com.orlinskas.videofacefinder.tflite.TFLiteObjectDetectionAPIModel
 import com.orlinskas.videofacefinder.ui.viewstate.FileViewState
 import com.orlinskas.videofacefinder.util.*
 import com.orlinskas.videofacefinder.systems.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.systems.FileSystem.toFileModel
 import com.orlinskas.videofacefinder.systems.FileSystem.toNumber
-import com.orlinskas.videofacefinder.systems.ImageSystem
+import com.orlinskas.videofacefinder.tflite.SimilarityClassifier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.io.*
@@ -33,7 +33,8 @@ import java.io.*
 class MainViewModel @ViewModelInject constructor(
     @ApplicationContext
     private val context: Context,
-    private val frameRepository: FrameRepository
+    private val frameRepository: FrameRepository,
+    private val faceRepository: FaceRepository
 ) : BaseViewModel() {
 
     val state = FileViewState()
@@ -42,15 +43,16 @@ class MainViewModel @ViewModelInject constructor(
     var onFileReceived: (() -> (Unit))? = null
 
     var faceDetector: FaceDetector
+    var faceClassifier: SimilarityClassifier
 
+    // FileSystem constants
     private val FRAME_IMAGES_FOLDER_NAME = "frames"
     private val FACE_IMAGES_FOLDER_NAME = "faces"
-
     private val INTERNAL_STORAGE_PATH = context.filesDir.absolutePath
     private val FRAME_IMAGES_FOLDER_PATH = INTERNAL_STORAGE_PATH + "/" + FRAME_IMAGES_FOLDER_NAME
     private val FACE_IMAGES_FOLDER_PATH = INTERNAL_STORAGE_PATH + "/" + FACE_IMAGES_FOLDER_NAME
 
-    // MobileFaceNet
+    // MobileFaceNet constants
     private val TF_OD_API_INPUT_SIZE = 112
     private val TF_OD_API_IS_QUANTIZED = false
     private val TF_OD_API_MODEL_FILE = "mobile_face_net.tflite"
@@ -62,9 +64,17 @@ class MainViewModel @ViewModelInject constructor(
         faceDetector = FaceDetector.Builder(context).apply {
             setTrackingEnabled(false)
         }.build()
+
+        faceClassifier = TFLiteObjectDetectionAPIModel.create(
+                context.assets,
+                TF_OD_API_MODEL_FILE,
+                TF_OD_API_LABELS_FILE,
+                TF_OD_API_INPUT_SIZE,
+                TF_OD_API_IS_QUANTIZED
+        )
     }
 
-    fun processFile(data: Uri): LiveData<FileSystemState> = MutableLiveData<FileSystemState>().also { liveData ->
+    fun fileLiveData(data: Uri): LiveData<FileSystemState> = MutableLiveData<FileSystemState>().also { liveData ->
         io {
             try {
                 val userFile = data.toFileModel(context.contentResolver)
@@ -82,7 +92,7 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    fun splitVideoFile(contentResolver: ContentResolver): LiveData<Boolean> = MutableLiveData<Boolean>().also { liveData ->
+    fun splitVideoFile(contentResolver: ContentResolver, callback: (Boolean) -> (Unit)) {
         io {
             Timber.d("Start split video")
             val operationStartTime = System.currentTimeMillis()
@@ -98,15 +108,15 @@ class MainViewModel @ViewModelInject constructor(
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
                 Timber.d("Finish split video, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
-                liveData.postValue(true)
+                callback.invoke(true)
             } else {
                 Timber.e("Split video FAILED, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
-                liveData.postValue(false)
+                callback.invoke(false)
             }
         }
     }
 
-    fun processFrames(): LiveData<Boolean> = MutableLiveData<Boolean>().also { liveData ->
+    fun processFrames(callback: (Boolean) -> (Unit)) {
         io {
             Timber.d("Start saving frames to database")
 
@@ -118,7 +128,7 @@ class MainViewModel @ViewModelInject constructor(
 
             if (files == null) {
                 Timber.e("Not found frames in ${directory.absolutePath}")
-                liveData.postValue(false)
+                callback.invoke(false)
                 return@io
             }
 
@@ -141,13 +151,13 @@ class MainViewModel @ViewModelInject constructor(
             }
 
             frameRepository.insertFrames(frames)
-            liveData.postValue(true)
 
             Timber.d("Finish frames saving, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+            callback.invoke(true)
         }
     }
 
-    fun processFaces(): LiveData<Boolean> = MutableLiveData<Boolean>().also { liveData ->
+    fun processFaces(callback: (Boolean) -> (Unit)) {
         io {
             Timber.d("Start faces process")
             val operationStartTime = System.currentTimeMillis()
@@ -156,22 +166,30 @@ class MainViewModel @ViewModelInject constructor(
             FileSystem.createFolder(FACE_IMAGES_FOLDER_PATH)
 
             val frames = frameRepository.getAllFrames()
+            val faceModelsToSave = mutableListOf<FaceModel>()
 
-            frames.forEachIndexed { index, frame ->
-                saveFacesFromFrame(frame, FACE_IMAGES_FOLDER_PATH, index)
+            frames.forEach{ frame ->
+                val facesOnFrame = prepareFaceImages(frame)
+
+                if (facesOnFrame.isNotEmpty()) {
+                    val faceModels = createFaceModel(frame, facesOnFrame, faceClassifier)
+                    faceModelsToSave.addAll(faceModels)
+                }
             }
 
             frameRepository.removeAllFrames()
             frames.toMutableList().clear()
 
-            liveData.postValue(true)
+            Timber.d("Saving ${faceModelsToSave.size} faces.")
+            faceRepository.insertFaces(faceModelsToSave)
+            faceModelsToSave.clear()
 
             Timber.d("Finish faces process, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+            callback.invoke(true)
         }
     }
 
-    private fun saveFacesFromFrame(frame: Frame, path: String, frameID: Int): Boolean {
-        Timber.d("Start find faces on frame")
+    private fun prepareFaceImages(frame: Frame): List<Bitmap> {
         val operationStartTime = System.currentTimeMillis()
 
         try {
@@ -179,53 +197,68 @@ class MainViewModel @ViewModelInject constructor(
 
             val faces = FaceDetectorSystem.findFaces(bitmap, faceDetector)
             val facesRect = mutableListOf<Rect>()
-            val facesBitmap = mutableListOf<Bitmap>()
+            val faceBitmaps = mutableListOf<Bitmap>()
+            val resizedFaceBitmaps = mutableListOf<Bitmap>()
 
             if (faces == null || faces.isEmpty()) {
-                return false
+                Timber.d("Frame - ${frame.id} Empty. Time ${(System.currentTimeMillis() - operationStartTime)}ms.")
+                return emptyList()
             }
 
-            faces.forEach { key, face ->
+            faces.forEach { _, face ->
                 facesRect.add(FaceDetectorSystem.findFaceRect(face))
             }
 
             facesRect.forEach { faceRect ->
-                facesBitmap.add(ImageSystem.getSubImage(bitmap, faceRect))
+                faceBitmaps.add(ImageSystem.getSubImage(bitmap, faceRect))
             }
 
-            facesBitmap.forEachIndexed { index, faceBitmap ->
-                FileSystem.createFileFrom(faceBitmap, "$path/$frameID($index).png")
+            faceBitmaps.forEach { faceBitmap ->
+                val resizedBitmap = ImageSystem.resize(faceBitmap, TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE)
+
+                if (resizedBitmap != null) {
+                    resizedFaceBitmaps.add(resizedBitmap)
+                } else {
+                    Timber.e("Error bitmap resize")
+                }
             }
 
-            Timber.d("Finish find faces, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
-            Timber.d("Find ${faces.size()} faces \n")
-            Timber.d("\n")
-
-            return true
+            Timber.d("Frame - ${frame.id}. Found faces - ${resizedFaceBitmaps.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms.")
+            return resizedFaceBitmaps
         } catch (e: Exception) {
-            Timber.e("Finish find faces, with error \n $e")
-            return false
+            Timber.e("Frame - ${frame.id}. Found faces ${(System.currentTimeMillis() - operationStartTime)}ms. Error - \n $e")
+            return emptyList()
         }
     }
 
-    fun recognizeFace() {
-        io {
-            val detector = TFLiteObjectDetectionAPIModel.create(
-                    context.assets,
-                    TF_OD_API_MODEL_FILE,
-                    TF_OD_API_LABELS_FILE,
-                    TF_OD_API_INPUT_SIZE,
-                    TF_OD_API_IS_QUANTIZED)
+    private fun createFaceModel(frame: Frame, bitmaps: List<Bitmap>, classifier: SimilarityClassifier): List<FaceModel> {
+        val operationStartTime = System.currentTimeMillis()
 
-            val bitmap = FileSystem.bitmapFrom(FACE_IMAGES_FOLDER_PATH + "/0(0).png")
-            val resizeBitmap = ImageSystem.resize(bitmap, TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE)
-            val data = detector.recognizeImage(resizeBitmap, true)
+        val faceModels = mutableListOf<FaceModel>()
 
-            val data2 = detector.recognize(resizeBitmap)
+        bitmaps.forEachIndexed { index, bitmap ->
+            val base64 = ImageSystem.encodeBitmapToBase64(bitmap)
+            val data = FaceRecognitionSystem.recognize(bitmap, classifier)
 
-            data.forEach {
-                Timber.d(it.toString())
+            if (base64.isNullOrEmpty() || data.isEmpty()) {
+                Timber.e("Frame - ${frame.id}. Create face model error on frame id - ${frame.id}")
+            } else {
+                val faceModel = FaceModel(
+                        id = 0,
+                        name = "frame - ${frame.id}; face - $index",
+                        description = "",
+                        data = data,
+                        imageBase64 = base64,
+                        startSecond = frame.startSecond,
+                        videoName = frame.videoName,
+                        videoDescription = frame.videoDescription
+                )
+
+                faceModels.add(faceModel)
             }
         }
+
+        Timber.d("Frame - ${frame.id}. Created models ${faceModels.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
+        return faceModels
     }
 }

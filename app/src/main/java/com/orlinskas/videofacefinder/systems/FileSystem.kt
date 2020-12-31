@@ -56,12 +56,11 @@ object FileSystem {
     }
 
     fun bitmapFrom(path: String): Bitmap {
-        Timber.d("Start get bitmap from frame file")
         val operationStartTime = System.currentTimeMillis()
 
         val bitmap = BitmapFactory.decodeFile(path)
 
-        Timber.d("Finish get bitmap from frame file, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+        Timber.d("$path -> bitmap, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
 
         return bitmap
     }

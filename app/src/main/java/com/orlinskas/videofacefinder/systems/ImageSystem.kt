@@ -83,14 +83,9 @@ object ImageSystem {
     }
 
     fun getSubImage(bitmap: Bitmap, copyRect: Rect): Bitmap {
-        Timber.d("Start get subImage")
-        val operationStartTime = System.currentTimeMillis()
-
         val subImage = Bitmap.createBitmap(copyRect.width(), copyRect.height(), Bitmap.Config.RGB_565)
         val canvas = Canvas(subImage)
         canvas.drawBitmap(bitmap, copyRect, Rect(0, 0, copyRect.width(), copyRect.height()), null)
-
-        Timber.d("Finish get subImage, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
 
         return subImage
     }

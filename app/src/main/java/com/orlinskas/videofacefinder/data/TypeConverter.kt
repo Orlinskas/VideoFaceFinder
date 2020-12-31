@@ -4,27 +4,23 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.math.BigDecimal
+import java.util.*
 
 class TypeConverter {
 
     private val gson = Gson()
 
-//    @TypeConverter
-//    fun realizationToJson(products: List<Realization>?): String? {
-//        return if (products == null || products.isEmpty()) {
-//            null
-//        } else {
-//            gson.toJson(products)
-//        }
-//    }
-//
-//    @TypeConverter
-//    fun jsonToRealization(json: String?): List<Realization> {
-//        return if (json.isNullOrEmpty()) {
-//            listOf()
-//        } else {
-//            val type = object : TypeToken<List<Realization>>() {}.type
-//            gson.fromJson(json, type)
-//        }
-//    }
+    @TypeConverter
+    fun valueToDate(json: String): Date = gson.fromJson(json)
+
+    @TypeConverter
+    fun dateToValue(date: Date): String = gson.toJson(date)
+
+    @TypeConverter
+    fun valueToFloatArray(json: String): FloatArray = gson.fromJson(json)
+
+    @TypeConverter
+    fun floatArrayToValue(array: FloatArray): String = gson.toJson(array)
+
+    inline fun <reified T> Gson.fromJson(json: String) = this.fromJson<T>(json, object : TypeToken<T>() {}.type)
 }

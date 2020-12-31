@@ -4,17 +4,16 @@ import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.orlinskas.videofacefinder.data.Tables
-import java.util.*
 
 @Keep
 @Entity(tableName = Tables.FACE)
 data class FaceModel (
-        @PrimaryKey
+        @PrimaryKey(autoGenerate = true)
         val id: Long,
         val name: String,
         val description: String,
         val data: FloatArray,
-        val imageBase64: Base64,
+        val imageBase64: String,
         val startSecond: Int,
         val videoName: String,
         val videoDescription: String

@@ -39,25 +39,17 @@ class MainActivity : BaseActivity() {
             requestPermission()
         }
 
-//        viewModel.onFileReceived = {
-//            if (viewModel.faceDetector.isOperational) {
-//                viewModel.splitVideoFile(contentResolver).singleObserve(this) {
-//                    if (it) {
-//                        viewModel.processFrames().singleObserve(this) {
-//                            if (it) {
-//                                viewModel.processFaces().singleObserve(this) {
-//
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            } else {
-//                AlertDialog.Builder(this).setMessage("Wait to load face detector lib").show()
-//            }
-//        }
-
-        viewModel.recognizeFace()
+        viewModel.onFileReceived = {
+            if (viewModel.faceDetector.isOperational) {
+                viewModel.splitVideoFile(contentResolver) {
+                    viewModel.processFrames {
+                        viewModel.processFaces {}
+                    }
+                }
+            } else {
+                AlertDialog.Builder(this).setMessage("Wait to load face detector lib").show()
+            }
+        }
     }
 
     private fun requestPermission() {
@@ -81,7 +73,7 @@ class MainActivity : BaseActivity() {
             showProgressDialog()
 
             data?.data?.let { uri ->
-                viewModel.processFile(uri).singleObserve(this) {
+                viewModel.fileLiveData(uri).singleObserve(this) {
                     hideProgressDialog()
 
                     when (it) {
