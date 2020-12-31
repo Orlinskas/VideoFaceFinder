@@ -12,6 +12,4 @@ data class Frame (
     val id: Long,
     val absolutePath: String,
     val startSecond: Int
-) {
-
-}
+)

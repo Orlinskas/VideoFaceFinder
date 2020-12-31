@@ -39,23 +39,25 @@ class MainActivity : BaseActivity() {
             requestPermission()
         }
 
-        viewModel.onFileReceived = {
-            if (viewModel.faceDetector.isOperational) {
-                viewModel.splitVideoFile(contentResolver).singleObserve(this) {
-                    if (it) {
-                        viewModel.processFrames().singleObserve(this) {
-                            if (it) {
-                                viewModel.processFaces().singleObserve(this) {
+//        viewModel.onFileReceived = {
+//            if (viewModel.faceDetector.isOperational) {
+//                viewModel.splitVideoFile(contentResolver).singleObserve(this) {
+//                    if (it) {
+//                        viewModel.processFrames().singleObserve(this) {
+//                            if (it) {
+//                                viewModel.processFaces().singleObserve(this) {
+//
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            } else {
+//                AlertDialog.Builder(this).setMessage("Wait to load face detector lib").show()
+//            }
+//        }
 
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                AlertDialog.Builder(this).setMessage("Wait to load face detector lib").show()
-            }
-        }
+        viewModel.recognizeFace()
     }
 
     private fun requestPermission() {
