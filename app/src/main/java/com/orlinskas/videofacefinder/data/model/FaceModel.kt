@@ -1,5 +1,6 @@
 package com.orlinskas.videofacefinder.data.model
 
+import android.graphics.Rect
 import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -13,6 +14,7 @@ data class FaceModel (
         val name: String,
         val description: String,
         val data: FloatArray,
+        val faceRect: Rect,
         val imageBase64: String,
         val startSecond: Int,
         val videoName: String,

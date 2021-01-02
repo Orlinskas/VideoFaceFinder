@@ -103,7 +103,8 @@ public class TFLiteClassifier {
             final String modelFilename,
             final String labelFilename,
             final int inputSize,
-            final boolean isQuantized)
+            final boolean isQuantized
+    )
             throws IOException {
 
         final TFLiteClassifier d = new TFLiteClassifier();
@@ -146,30 +147,35 @@ public class TFLiteClassifier {
     }
 
     public float[] recognize(final Bitmap bitmap) {
-        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+        try {
+            bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
-        imgData.rewind();
-        for (int i = 0; i < inputSize; ++i) {
-            for (int j = 0; j < inputSize; ++j) {
-                int pixelValue = intValues[i * inputSize + j];
-                if (isModelQuantized) {
-                    // Quantized model
-                    imgData.put((byte) ((pixelValue >> 16) & 0xFF));
-                    imgData.put((byte) ((pixelValue >> 8) & 0xFF));
-                    imgData.put((byte) (pixelValue & 0xFF));
-                } else { // Float model
-                    imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+            imgData.rewind();
+            for (int i = 0; i < inputSize; ++i) {
+                for (int j = 0; j < inputSize; ++j) {
+                    int pixelValue = intValues[i * inputSize + j];
+                    if (isModelQuantized) {
+                        // Quantized model
+                        imgData.put((byte) ((pixelValue >> 16) & 0xFF));
+                        imgData.put((byte) ((pixelValue >> 8) & 0xFF));
+                        imgData.put((byte) (pixelValue & 0xFF));
+                    } else { // Float model
+                        imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                        imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                        imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                    }
                 }
             }
+
+            float[][] embeddings = new float[1][OUTPUT_SIZE];
+
+            tfLite.run(imgData, embeddings);
+
+            return embeddings[0];
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new float[]{};
         }
-
-        float[][] embeddings = new float[1][OUTPUT_SIZE];
-
-        tfLite.run(imgData, embeddings);
-
-        return embeddings[0];
     }
 
     public Float findNearest(float[] emb, float[] knownEmb) {

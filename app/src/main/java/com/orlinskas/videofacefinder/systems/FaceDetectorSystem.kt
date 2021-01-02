@@ -1,9 +1,11 @@
 package com.orlinskas.videofacefinder.systems
 
 import android.graphics.Bitmap
+import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.SparseArray
+import androidx.core.graphics.toPoint
 import androidx.core.graphics.toRect
 import com.google.android.gms.vision.Frame
 import com.google.android.gms.vision.face.Face
@@ -30,5 +32,9 @@ object FaceDetectorSystem {
         val y2 = y1 + face.height
 
         return RectF(x1, y1, x2, y2).toRect()
+    }
+
+    fun findFaceCenter(rect: Rect): Point {
+        return Point(rect.centerX(), rect.centerY())
     }
 }

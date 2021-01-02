@@ -149,6 +149,9 @@ class MainViewModel @ViewModelInject constructor(
                 )
             }
 
+            val params = FaceDataSimpleClassifier.collectFrameParams(frames[0], state.fps)
+            state.frameParams = params
+
             frameRepository.insertFrames(frames)
 
             Timber.d("Finish frames saving, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
@@ -167,7 +170,7 @@ class MainViewModel @ViewModelInject constructor(
             val frames = frameRepository.getAllFrames()
             val faceModelsToSave = mutableListOf<FaceModel>()
 
-            frames.forEach{ frame ->
+            frames.forEach { frame ->
                 val facesOnFrame = prepareFaceImages(frame)
 
                 if (facesOnFrame.isNotEmpty()) {
@@ -180,6 +183,7 @@ class MainViewModel @ViewModelInject constructor(
             frames.toMutableList().clear()
 
             Timber.d("Saving ${faceModelsToSave.size} faces.")
+            faceRepository.removeAllFaces()
             faceRepository.insertFaces(faceModelsToSave)
             faceModelsToSave.clear()
 
@@ -188,7 +192,7 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    private fun prepareFaceImages(frame: Frame): List<Bitmap> {
+    private fun prepareFaceImages(frame: Frame): List<Pair<Rect, Bitmap>> {
         val operationStartTime = System.currentTimeMillis()
 
         try {
@@ -196,8 +200,9 @@ class MainViewModel @ViewModelInject constructor(
 
             val faces = FaceDetectorSystem.findFaces(bitmap, faceDetector)
             val facesRect = mutableListOf<Rect>()
-            val faceBitmaps = mutableListOf<Bitmap>()
-            val resizedFaceBitmaps = mutableListOf<Bitmap>()
+
+            val faceBitmaps = mutableListOf<Pair<Rect, Bitmap>>()
+            val resizedFaceBitmaps = mutableListOf<Pair<Rect, Bitmap>>()
 
             if (faces == null || faces.isEmpty()) {
                 Timber.d("Frame - ${frame.id} Empty. Time ${(System.currentTimeMillis() - operationStartTime)}ms.")
@@ -209,14 +214,15 @@ class MainViewModel @ViewModelInject constructor(
             }
 
             facesRect.forEach { faceRect ->
-                faceBitmaps.add(ImageSystem.getSubImage(bitmap, faceRect))
+                val subBitmap = ImageSystem.getSubImage(bitmap, faceRect)
+                faceBitmaps.add(Pair(faceRect, subBitmap))
             }
 
             faceBitmaps.forEach { faceBitmap ->
-                val resizedBitmap = ImageSystem.resize(faceBitmap, TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE)
+                val resizedBitmap = ImageSystem.resize(faceBitmap.second, TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE)
 
                 if (resizedBitmap != null) {
-                    resizedFaceBitmaps.add(resizedBitmap)
+                    resizedFaceBitmaps.add(Pair(faceBitmap.first, resizedBitmap))
                 } else {
                     Timber.e("Error bitmap resize")
                 }
@@ -230,14 +236,14 @@ class MainViewModel @ViewModelInject constructor(
         }
     }
 
-    private fun createFaceModel(frame: Frame, bitmaps: List<Bitmap>, classifier: TFLiteClassifier): List<FaceModel> {
+    private fun createFaceModel(frame: Frame, bitmaps: List<Pair<Rect, Bitmap>>, classifier: TFLiteClassifier): List<FaceModel> {
         val operationStartTime = System.currentTimeMillis()
 
         val faceModels = mutableListOf<FaceModel>()
 
         bitmaps.forEachIndexed { index, bitmap ->
-            val base64 = ImageSystem.encodeBitmapToBase64(bitmap)
-            val data = FaceRecognitionSystem.recognize(bitmap, classifier)
+            val base64 = ImageSystem.encodeBitmapToBase64(bitmap.second)
+            val data = FaceRecognitionSystem.recognize(bitmap.second, classifier)
 
             if (base64.isNullOrEmpty() || data.isEmpty()) {
                 Timber.e("Frame - ${frame.id}. Create face model error on frame id - ${frame.id}")
@@ -247,6 +253,7 @@ class MainViewModel @ViewModelInject constructor(
                         name = "frame - ${frame.id}; face - $index",
                         description = "",
                         data = data,
+                        faceRect = bitmap.first,
                         imageBase64 = base64,
                         startSecond = frame.startSecond,
                         videoName = frame.videoName,
@@ -263,20 +270,25 @@ class MainViewModel @ViewModelInject constructor(
 
     fun searchNearest() {
         io {
+            val operationStartTime = System.currentTimeMillis()
+
             val faceModels = faceRepository.getFaces()
 
-            faceModels.forEach { current ->
-                val data = current.data
+            FileSystem.deleteFolder(FACE_IMAGES_FOLDER_PATH)
+            FileSystem.createFolder(FACE_IMAGES_FOLDER_PATH)
 
+            faceModels.forEach { current ->
                 val bitmap = ImageSystem.decodeBitmapFromBase64(current.imageBase64)
                 FileSystem.createFileFrom(bitmap!!, FACE_IMAGES_FOLDER_PATH + "/${current.id}.png")
+            }
 
-                faceModels.forEach { other ->
-                    val otherData = other.data
+            val classifier = FaceDataSimpleClassifier(faceModels, state.frameParams)
+            val result = classifier.run()
 
-                    val result = faceClassifier.findNearest(data, otherData)
-                    Timber.e("Face ${current.id} came close to face ${other.id} by - $result")
-                }
+            Timber.d("Found persons - ${result.keys.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
+
+            result.forEach {
+                Timber.d("Person - ${it.key}. \n Faces - ${it.value}")
             }
         }
     }

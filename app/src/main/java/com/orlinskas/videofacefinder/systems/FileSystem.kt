@@ -65,6 +65,16 @@ object FileSystem {
         return bitmap
     }
 
+    fun getImageDimension(path: String): Pair<Int, Int> {
+        val options = BitmapFactory.Options()
+        options.inJustDecodeBounds = true
+        BitmapFactory.decodeFile(path, options)
+        val imageHeight = options.outHeight
+        val imageWidth = options.outWidth
+
+        return Pair(imageHeight, imageWidth)
+    }
+
     fun Uri.toFileModel(resolver: ContentResolver): UserFile? {
 
         path?.let {
