@@ -141,11 +141,12 @@ class MainViewModel @ViewModelInject constructor(
                 val startSecond = index * state.fps
 
                 frames.add(
-                        Frame(
-                                id = index.toLong(),
-                                absolutePath = absolutePath,
-                                startSecond = startSecond
-                        )
+                    Frame(
+                        id = index.toLong(),
+                        absolutePath = absolutePath,
+                        startSecond = startSecond,
+                        faces = listOf()
+                    )
                 )
             }
 
@@ -175,6 +176,7 @@ class MainViewModel @ViewModelInject constructor(
 
                 if (facesOnFrame.isNotEmpty()) {
                     val faceModels = createFaceModel(frame, facesOnFrame, faceClassifier)
+                    frameRepository.updateFrame(frame.apply { faces = faceModels.map { it.id } })
                     faceModelsToSave.addAll(faceModels)
                 }
             }
@@ -255,6 +257,7 @@ class MainViewModel @ViewModelInject constructor(
                         data = data,
                         faceRect = bitmap.first,
                         imageBase64 = base64,
+                        frame = frame.id,
                         startSecond = frame.startSecond,
                         videoName = frame.videoName,
                         videoDescription = frame.videoDescription

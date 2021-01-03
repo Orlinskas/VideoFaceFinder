@@ -15,6 +15,10 @@ class FrameRepository @Inject constructor(
         frameDao.insertFrames(frames)
     }
 
+    fun updateFrame(frame: Frame) {
+        frameDao.updateFrame(frame)
+    }
+
     fun getAllFrames(): List<Frame> {
         return frameDao.getFrames()
     }

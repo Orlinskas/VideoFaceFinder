@@ -28,5 +28,11 @@ class TypeConverter {
     @TypeConverter
     fun rectToValue(rect: Rect): String = gson.toJson(rect)
 
+    @TypeConverter
+    fun valueToLongList(json: String): List<Long> = gson.fromJson(json)
+
+    @TypeConverter
+    fun longListToValue(list: List<Long>): String = gson.toJson(list)
+
     inline fun <reified T> Gson.fromJson(json: String) = this.fromJson<T>(json, object : TypeToken<T>() {}.type)
 }

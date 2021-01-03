@@ -13,6 +13,7 @@ data class Frame (
     val id: Long,
     val absolutePath: String,
     val startSecond: Int,
+    var faces: List<Long>,
     val videoName: String = "",
     val videoDescription: String = "",
     val videoCreateDate: Date = Calendar.getInstance().time

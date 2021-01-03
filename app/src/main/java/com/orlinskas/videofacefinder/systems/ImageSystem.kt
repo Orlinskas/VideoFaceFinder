@@ -45,29 +45,7 @@ object ImageSystem {
             return null
         }
 
-        val srcRatio: Float
-        val resizedWidth: Int
-        val resizedHeight: Int
-
-        val srcWidth: Int = sourceBitmap.width
-        val srcHeight: Int = sourceBitmap.height
-
-        if (srcWidth <= desireWidth || srcHeight <= desireHeight || srcWidth <= desireWidth && srcHeight <= desireHeight) {
-            return sourceBitmap
-        }
-
-        srcRatio = srcWidth.toFloat() / srcHeight.toFloat()
-
-        val boxRatio: Float = desireWidth.toFloat() / desireHeight.toFloat()
-
-        if (srcRatio < boxRatio) {
-            resizedHeight = desireHeight
-            resizedWidth = (resizedHeight.toFloat() * srcRatio).toInt()
-        } else {
-            resizedWidth = desireWidth
-            resizedHeight = (resizedWidth.toFloat() / srcRatio).toInt()
-        }
-        val resizedBitmap = Bitmap.createScaledBitmap(sourceBitmap, resizedWidth, resizedHeight, true)
+        val resizedBitmap = Bitmap.createScaledBitmap(sourceBitmap, desireWidth, desireHeight, true)
 
         if (sourceBitmap != resizedBitmap) {
             recycleBitmap(sourceBitmap)
