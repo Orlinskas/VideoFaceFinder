@@ -62,6 +62,7 @@ class MainViewModel @ViewModelInject constructor(
 
         faceDetector = FaceDetector.Builder(context).apply {
             setTrackingEnabled(false)
+            setMode(FaceDetector.FAST_MODE)
         }.build()
 
         faceClassifier = TFLiteClassifier.create(
@@ -138,7 +139,7 @@ class MainViewModel @ViewModelInject constructor(
 
             sortedFiles.forEachIndexed { index, file ->
                 val absolutePath = file.absolutePath
-                val startSecond = index * state.fps
+                val startSecond = index * state.fps.double
 
                 frames.add(
                     Frame(
@@ -150,7 +151,7 @@ class MainViewModel @ViewModelInject constructor(
                 )
             }
 
-            val params = FaceDataSimpleClassifier.collectFrameParams(frames[0], state.fps)
+            val params = FaceDataSimpleClassifier.collectFrameParams(frames[0], state.fps.double)
             state.frameParams = params
 
             frameRepository.insertFrames(frames)

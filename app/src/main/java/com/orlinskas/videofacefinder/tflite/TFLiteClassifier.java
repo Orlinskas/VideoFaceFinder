@@ -28,6 +28,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import org.tensorflow.lite.Interpreter;
 
@@ -175,6 +179,47 @@ public class TFLiteClassifier {
         } catch (Exception e) {
             e.printStackTrace();
             return new float[]{};
+        }
+    }
+
+    public Map<Integer, Object> recognizeMultiply(final List<Bitmap> bitmaps) {
+        try {
+
+            ArrayList<Object> imgsData = new ArrayList<>();
+
+            for (Bitmap bitmap : bitmaps) {
+                bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+                imgData.rewind();
+                for (int i = 0; i < inputSize; ++i) {
+                    for (int j = 0; j < inputSize; ++j) {
+                        int pixelValue = intValues[i * inputSize + j];
+                        if (isModelQuantized) {
+                            // Quantized model
+                            imgData.put((byte) ((pixelValue >> 16) & 0xFF));
+                            imgData.put((byte) ((pixelValue >> 8) & 0xFF));
+                            imgData.put((byte) (pixelValue & 0xFF));
+                        } else { // Float model
+                            imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                            imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                            imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                        }
+                    }
+                }
+
+                imgsData.add(imgData);
+            }
+
+            float[][] embeddings = new float[1][OUTPUT_SIZE];
+
+            Map<Integer, Object> output = new HashMap<>();
+
+            tfLite.runForMultipleInputsOutputs(new ArrayList[]{imgsData}, output);
+
+            return output;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
         }
     }
 

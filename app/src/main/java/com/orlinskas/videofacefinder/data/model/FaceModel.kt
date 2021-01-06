@@ -17,7 +17,7 @@ data class FaceModel (
         val faceRect: Rect,
         val imageBase64: String,
         val frame: Long,
-        val startSecond: Int,
+        val startSecond: Double,
         val videoName: String,
         val videoDescription: String
 ) {

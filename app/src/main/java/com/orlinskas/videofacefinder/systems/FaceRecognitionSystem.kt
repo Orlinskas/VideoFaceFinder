@@ -10,6 +10,10 @@ object FaceRecognitionSystem {
         return classifier.recognize(bitmap)
     }
 
+    fun recognizeMultiply(bitmaps: List<Bitmap>, classifier: TFLiteClassifier): MutableMap<Int, Any>? {
+        return classifier.recognizeMultiply(bitmaps)
+    }
+
     fun compare(firstData: FloatArray, secondData: FloatArray): Float {
         var ret: Float? = null
         var distance = 0f

@@ -12,7 +12,7 @@ data class Frame (
     @PrimaryKey
     val id: Long,
     val absolutePath: String,
-    val startSecond: Int,
+    val startSecond: Double,
     var faces: List<Long>,
     val videoName: String = "",
     val videoDescription: String = "",

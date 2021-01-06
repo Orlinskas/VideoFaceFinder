@@ -17,18 +17,14 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.*
 
+
 object FileSystem {
 
     fun createFileFrom(bitmap: Bitmap, path: String): File {
-        Timber.d("Start create file from bitmap")
-        val operationStartTime = System.currentTimeMillis()
-
         val file = File(path)
         val outputStream: OutputStream = BufferedOutputStream(FileOutputStream(file))
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.close()
-
-        Timber.d("Finish create file from bitmap, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
 
         return file
     }
@@ -55,10 +51,14 @@ object FileSystem {
         }
     }
 
-    fun bitmapFrom(path: String): Bitmap {
+    fun bitmapFrom(path: String, sampleSize: Int = 1): Bitmap {
         val operationStartTime = System.currentTimeMillis()
 
-        val bitmap = BitmapFactory.decodeFile(path)
+        val option = BitmapFactory.Options()
+        option.inPreferredConfig = Bitmap.Config.RGB_565
+        option.inSampleSize = sampleSize
+
+        val bitmap = BitmapFactory.decodeFile(path, option)
 
         Timber.d("$path -> bitmap, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
 
