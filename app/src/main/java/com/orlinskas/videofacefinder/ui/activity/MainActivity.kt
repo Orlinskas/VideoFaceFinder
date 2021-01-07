@@ -10,6 +10,7 @@ import com.orlinskas.videofacefinder.core.BaseActivity
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
+
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
 
@@ -57,7 +58,9 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onBackPressed() {
-        super.onBackPressed()
-        this.finish()
+        if (!viewModel.state.isProgress) {
+            super.onBackPressed()
+            this.finish()
+        }
     }
 }

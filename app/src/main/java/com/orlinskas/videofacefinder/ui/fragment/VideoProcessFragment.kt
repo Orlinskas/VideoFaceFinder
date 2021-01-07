@@ -4,23 +4,29 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.databinding.ObservableBoolean
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.FragmentVideoProcessBinding
 import com.orlinskas.videofacefinder.core.BaseFragment
 import com.orlinskas.videofacefinder.data.enums.FileSystemState
 import com.orlinskas.videofacefinder.data.enums.Settings
-import com.orlinskas.videofacefinder.data.enums.Settings.Fps.Companion.getSliderValue
 import com.orlinskas.videofacefinder.data.enums.VideoMimeType
+import com.orlinskas.videofacefinder.extensions.convertToStringRepresentation
 import com.orlinskas.videofacefinder.extensions.singleObserve
+import com.orlinskas.videofacefinder.extensions.toast
+import com.orlinskas.videofacefinder.service.VideoProcessService
+import com.orlinskas.videofacefinder.systems.FileSystem
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
+
 
 @AndroidEntryPoint
 class VideoProcessFragment : BaseFragment() {
@@ -35,18 +41,29 @@ class VideoProcessFragment : BaseFragment() {
         obtainViewModel(requireActivity(), MainViewModel::class.java)
     }
 
-    override fun onStart() {
-        super.onStart()
-
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //getView()?.setBackgroundColor(Color.TRANSPARENT)
+        binding.isProgress = ObservableBoolean(false)
+
+        if (viewModel.state.file != null) {
+            setFileThumbnail()
+        }
+
+        binding.imageButton.setOnClickListener {
+            viewModel.onFileManagerRequest?.invoke()
+        }
+
+        binding.imageVideo.setOnClickListener {
+            viewModel.onFileManagerRequest?.invoke()
+        }
 
         binding.btnStart.setOnClickListener {
-            viewModel.onFileManagerRequest?.invoke()
+            if (viewModel.state.file == null) {
+                viewModel.onFileManagerRequest?.invoke()
+            } else {
+                viewModel.runVideoProcessing()
+            }
         }
 
         viewModel.onFileManagerRequest = {
@@ -54,17 +71,7 @@ class VideoProcessFragment : BaseFragment() {
         }
 
         viewModel.onFileReceived = {
-            if (viewModel.faceDetector.isOperational) {
-                viewModel.splitVideoFile(requireContext().contentResolver) {
-                    viewModel.processFrames {
-                        viewModel.processFaces {
-                            viewModel.searchNearest()
-                        }
-                    }
-                }
-            } else {
-                AlertDialog.Builder(requireContext()).setMessage("Wait to load face detector lib").show()
-            }
+            setFileThumbnail()
         }
 
         with(binding.fpsSlider) {
@@ -96,6 +103,36 @@ class VideoProcessFragment : BaseFragment() {
                 viewModel.state.scale = Settings.Scale.fromValue(value)
             }
         }
+
+        viewModel.videoProcessLiveData.singleObserve(viewLifecycleOwner) { state ->
+            if (state != null) {
+                when(state) {
+                    VideoProcessService.State.LOADING -> {
+                        showProgress()
+                    }
+                    VideoProcessService.State.SUCCESS -> {
+                        hideProgress()
+                    }
+                    VideoProcessService.State.FAIL -> {
+                        hideProgress()
+                        requireContext().applicationContext.toast("Video processing error")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setFileThumbnail() {
+        val file = viewModel.state.file
+        val thumbnail = FileSystem.createVideoThumbnail(file)
+        binding.imageVideo.setImageBitmap(thumbnail)
+        binding.imageButton.visibility = View.INVISIBLE
+        binding.chipType.text = file?.type
+        binding.chipType.visibility = View.VISIBLE
+        binding.chipSize.text = file?.size?.convertToStringRepresentation()
+        binding.chipSize.visibility = View.VISIBLE
+        binding.videoFileName.text = file?.name
+        binding.videoFileName.visibility = View.VISIBLE
     }
 
     private fun requestPermission() {
@@ -156,6 +193,16 @@ class VideoProcessFragment : BaseFragment() {
 
             startActivityForResult(intent, GALLERY_REQUEST_CODE)
         }
+    }
+
+    private fun showProgress() {
+        viewModel.state.isProgress = true
+        binding.isProgress?.set(true)
+    }
+
+    private fun hideProgress() {
+        viewModel.state.isProgress = false
+        binding.isProgress?.set(false)
     }
 
     companion object {

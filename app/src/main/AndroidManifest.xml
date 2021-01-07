@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:name="com.orlinskas.videofacefinder.App"
@@ -12,6 +13,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:largeHeap="true"
         android:requestLegacyExternalStorage="true"
         android:theme="@style/AppTheme">
 
@@ -25,6 +27,10 @@
             </intent-filter>
 
         </activity>
+
+        <service
+            android:name="com.orlinskas.videofacefinder.service.VideoProcessService"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.gms.vision.DEPENDENCIES"

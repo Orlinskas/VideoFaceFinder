@@ -3,11 +3,12 @@
 <resources>
     <color name="colorPrimary">#A18AE3</color>
     <color name="colorPrimaryDark">#2F2350</color>
-    <color name="colorAccent">#F2C8C4</color>
+    <color name="colorAccent">#A05AB0</color>
     <color name="colorTextPrimary">#FFFFF0</color>
     <color name="colorTextSecondary">#B8B8B8</color>
 
     <color name="colorFragmentBackground">#1B1B1E</color>
+    <color name="colorFragmentBackgroundAlpha">#B51B1B1E</color>
 
     <color name="colorStatusBar">#000000</color>
     <color name="colorBottomNavigation">#1B1B1E</color>

@@ -31,4 +31,11 @@
         tools:layout="@layout/fragment_persons_list">
     </fragment>
 
+    <fragment
+        android:id="@+id/progressDialogFragment"
+        android:name="com.orlinskas.videofacefinder.ui.dialog.ProgressDialogFragment"
+        android:label="ProgressDialogFragment"
+        tools:layout="@layout/dialog_progress">
+    </fragment>
+
 </navigation>

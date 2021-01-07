@@ -7,5 +7,9 @@
     <string name="main_bottom_video">Run video</string>
     <string name="main_bottom_video_last_results">Last Results</string>
     <string name="main_bottom_menu_persons_list">Persons list</string>
+    <string name="notification_video_processing_title">Video processing</string>
+    <string name="notification_video_processing_title_sub">Please wait</string>
+    <string name="notification_video_processing_done_message">Done</string>
+    <string name="notification_video_processing_fail_message">Fail</string>
 
 </resources>

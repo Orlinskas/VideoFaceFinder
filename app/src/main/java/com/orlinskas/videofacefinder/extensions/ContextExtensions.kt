@@ -2,6 +2,7 @@ package com.orlinskas.videofacefinder.extensions
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes

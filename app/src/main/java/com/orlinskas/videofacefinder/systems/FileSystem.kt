@@ -11,7 +11,6 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Size
 import android.webkit.MimeTypeMap
-import androidx.core.net.toFile
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.extensions.removeFirstPathPart
 import timber.log.Timber
@@ -24,14 +23,13 @@ import java.util.*
 
 object FileSystem {
 
-    fun createVideoThumbnail(videoFile: UserFile): Bitmap? {
-        val file = videoFile.uri?.toFile()
-
-        return if (file != null) {
-            ThumbnailUtils.createVideoThumbnail(file, Size(200, 200), CancellationSignal())
-        } else {
-            null
+    fun createVideoThumbnail(videoFile: UserFile?): Bitmap? {
+        if (videoFile?.path != null) {
+            val file = File(videoFile.path)
+            return ThumbnailUtils.createVideoThumbnail(file, Size(1000, 1000), CancellationSignal())
         }
+
+        return null
     }
 
     fun createFileFrom(bitmap: Bitmap, path: String): File {
@@ -98,7 +96,7 @@ object FileSystem {
                 type = getFileMimeType(resolver, this, true),
                 mimeType = getFileMimeType(resolver, this, false),
                 size = getFileSize(resolver, this),
-                path = it,
+                path = getVideoPath(this, resolver) ?: "",
                 uri = this
             )
         }

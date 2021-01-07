@@ -223,22 +223,7 @@ public class TFLiteClassifier {
         }
     }
 
-    public Float findNearest(float[] emb, float[] knownEmb) {
-        Float ret = null;
-        float distance = 0;
-
-        for (int i = 0; i < emb.length; i++) {
-            float diff = emb[i] - knownEmb[i];
-            distance += diff*diff;
-        }
-
-        distance = (float) Math.sqrt(distance);
-        if (ret == null || distance < ret) {
-            ret = distance;
-        }
-
-        return ret;
+    public void close() {
+        tfLite.close();
     }
-
-    public void close() {}
 }

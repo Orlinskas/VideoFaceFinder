@@ -6,10 +6,10 @@ import com.orlinskas.videofacefinder.data.enums.Settings
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.systems.FaceDataSimpleClassifier
 
-private const val KEY_FILE = "FILE"
-private const val KEY_FPS = "KEY_FPS"
-private const val KEY_COMPRESS = "KEY_COMPRESS"
-private const val KEY_SCALE = "KEY_SCALE"
+const val KEY_FILE = "FILE"
+const val KEY_FPS = "KEY_FPS"
+const val KEY_COMPRESS = "KEY_COMPRESS"
+const val KEY_SCALE = "KEY_SCALE"
 
 class FileViewState : ViewState {
 
@@ -20,6 +20,7 @@ class FileViewState : ViewState {
     var compress = Settings.Compress.DEFAULT
     var scale = Settings.Scale.DEFAULT
 
+    var isProgress = false
 
     override fun onRestoreState(bundle: Bundle?) {
         super.onRestoreState(bundle)
@@ -41,6 +42,19 @@ class FileViewState : ViewState {
                 putFloat(KEY_SCALE, Settings.Scale.getSliderValue(scale))
             }
         }
+    }
+
+    fun getCurrentBundle(): Bundle {
+        val bundle = Bundle()
+
+        with(bundle) {
+            putParcelable(KEY_FILE, file)
+            putFloat(KEY_FPS, Settings.Fps.getSliderValue(fps))
+            putFloat(KEY_COMPRESS, Settings.Compress.getSliderValue(compress))
+            putFloat(KEY_SCALE, Settings.Scale.getSliderValue(scale))
+        }
+
+        return bundle
     }
 
 }
