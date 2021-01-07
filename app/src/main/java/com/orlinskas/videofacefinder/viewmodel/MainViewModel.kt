@@ -103,7 +103,7 @@ class MainViewModel @ViewModelInject constructor(
             FileSystem.deleteFolder(FRAME_IMAGES_FOLDER_PATH)
             FileSystem.createFolder(FRAME_IMAGES_FOLDER_PATH)
 
-            val command = FFMPEGSystem.buildSplitCommand(filePath, FRAME_IMAGES_FOLDER_PATH, state.fps)
+            val command = FFMPEGSystem.buildSplitCommand(filePath, FRAME_IMAGES_FOLDER_PATH, state.fps, state.compress)
             val rc = FFmpeg.execute(command)
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
@@ -139,7 +139,7 @@ class MainViewModel @ViewModelInject constructor(
 
             sortedFiles.forEachIndexed { index, file ->
                 val absolutePath = file.absolutePath
-                val startSecond = index * state.fps.double
+                val startSecond = index * state.fps.float.toDouble()
 
                 frames.add(
                     Frame(
@@ -151,7 +151,7 @@ class MainViewModel @ViewModelInject constructor(
                 )
             }
 
-            val params = FaceDataSimpleClassifier.collectFrameParams(frames[0], state.fps.double)
+            val params = FaceDataSimpleClassifier.collectFrameParams(frames[0], state.fps.float.toDouble())
             state.frameParams = params
 
             frameRepository.insertFrames(frames)
@@ -199,7 +199,7 @@ class MainViewModel @ViewModelInject constructor(
         val operationStartTime = System.currentTimeMillis()
 
         try {
-            val bitmap = FileSystem.bitmapFrom(frame.absolutePath)
+            val bitmap = FileSystem.bitmapFrom(frame.absolutePath, state.scale.int)
 
             val faces = FaceDetectorSystem.findFaces(bitmap, faceDetector)
             val facesRect = mutableListOf<Rect>()

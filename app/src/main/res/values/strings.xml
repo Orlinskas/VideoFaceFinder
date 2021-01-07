@@ -4,5 +4,8 @@
     <string name="app_name">Video Face Finder</string>
     <string name="dialog_error_title">Error</string>
     <string name="retry">Repeat</string>
+    <string name="main_bottom_video">Run video</string>
+    <string name="main_bottom_video_last_results">Last Results</string>
+    <string name="main_bottom_menu_persons_list">Persons list</string>
 
 </resources>

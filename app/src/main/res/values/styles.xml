@@ -5,6 +5,8 @@
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.DayNight">
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="android:statusBarColor">@color/colorStatusBar</item>
         <item name="android:fontFamily" tools:targetApi="jelly_bean">@font/opensans_font</item>
         <item name="fontFamily">@font/opensans_font</item>
     </style>
@@ -18,7 +20,45 @@
         <item name="android:fitsSystemWindows">true</item>
     </style>
 
-    <style name="Toolbar" parent="ThemeOverlay.MaterialComponents.Light" />
+    <style name="Toolbar" parent="ThemeOverlay.MaterialComponents.Toolbar.Primary">
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="colorPrimary">@color/colorBlack</item>
+        <item name="colorOnPrimary">@color/colorBlack</item>
+    </style>
+
+    <style name="Text">
+        <item name="android:textSize">@dimen/text_regular</item>
+        <item name="android:textColor">@color/colorTextPrimary</item>
+    </style>
+
+    <style name="Text.ExtraLight" parent="Text" tools:ignore="UnusedResources">
+        <item name="android:fontFamily">@font/source_sans_pro_extra_light</item>
+    </style>
+
+    <style name="Text.Light" parent="Text" tools:ignore="UnusedResources">
+        <item name="android:fontFamily">@font/source_sans_pro_light</item>
+    </style>
+
+    <style name="Text.Regular" parent="Text" tools:ignore="UnusedResources">
+        <item name="android:fontFamily">@font/source_sans_pro_regular</item>
+    </style>
+
+    <style name="Text.SemiBold" parent="Text">
+        <item name="android:fontFamily">@font/source_sans_pro_semi_bold</item>
+    </style>
+
+    <style name="Text.Bold" parent="Text" tools:ignore="UnusedResources">
+        <item name="android:fontFamily">@font/source_sans_pro_bold</item>
+    </style>
+
+    <style name="Text.Black" parent="Text" tools:ignore="UnusedResources">
+        <item name="android:fontFamily">@font/source_sans_pro_black</item>
+    </style>
+
+    <style name="Text.Title" parent="Text.SemiBold" tools:ignore="UnusedResources">
+        <item name="android:textColor">@color/colorTextPrimary</item>
+        <item name="android:textSize">@dimen/text_large</item>
+    </style>
 
 
 

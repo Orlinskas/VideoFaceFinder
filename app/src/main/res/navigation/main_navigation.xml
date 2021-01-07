@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_navigation_id"
+    app:startDestination="@id/videoProcessFragment">
+
+    <fragment
+        android:id="@+id/videoProcessFragment"
+        android:name="com.orlinskas.videofacefinder.ui.fragment.VideoProcessFragment"
+        android:label="VideoProcessFragment"
+        tools:layout="@layout/fragment_video_process">
+<!--        <argument-->
+<!--            android:name="params"-->
+<!--            app:argType="com.sandiplus.b2b.data.PlanFactParameters" />-->
+    </fragment>
+
+    <fragment
+        android:id="@+id/videoResultsFragment"
+        android:name="com.orlinskas.videofacefinder.ui.fragment.VideoResultsFragment"
+        android:label="VideoResultsFragment"
+        tools:layout="@layout/fragment_video_results">
+    </fragment>
+
+    <fragment
+        android:id="@+id/personsListFragment"
+        android:name="com.orlinskas.videofacefinder.ui.fragment.PersonsListFragment"
+        android:label="PersonsListFragment"
+        tools:layout="@layout/fragment_persons_list">
+    </fragment>
+
+</navigation>

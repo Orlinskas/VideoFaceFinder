@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/video"
+        android:enabled="true"
+        android:icon="@drawable/ic_baseline_video_call_24"
+        android:title="@string/main_bottom_video"/>
+    <item
+        android:id="@+id/results"
+        android:enabled="true"
+        android:icon="@drawable/ic_baseline_playlist_add_check_24"
+        android:title="@string/main_bottom_video_last_results"/>
+    <item
+        android:id="@+id/persons"
+        android:enabled="true"
+        android:icon="@drawable/ic_baseline_person_search_24"
+        android:title="@string/main_bottom_menu_persons_list"/>
+</menu>
