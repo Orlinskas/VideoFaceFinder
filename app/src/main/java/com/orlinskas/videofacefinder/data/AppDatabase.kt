@@ -5,15 +5,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.orlinskas.videofacefinder.data.dao.FaceDao
 import com.orlinskas.videofacefinder.data.dao.FrameDao
-import com.orlinskas.videofacefinder.data.model.DefaultModel
+import com.orlinskas.videofacefinder.data.dao.PersonsDao
 import com.orlinskas.videofacefinder.data.model.FaceModel
 import com.orlinskas.videofacefinder.data.model.Frame
+import com.orlinskas.videofacefinder.data.model.Person
 
 @Database(
     entities = [
-        DefaultModel::class,
         Frame::class,
-        FaceModel::class
+        FaceModel::class,
+        Person::class
     ],
     version = 1,
     exportSchema = false
@@ -24,4 +25,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun frameDao(): FrameDao
 
     abstract fun faceDao(): FaceDao
+
+    abstract fun personDao(): PersonsDao
 }

@@ -14,6 +14,10 @@ class FaceRepository @Inject constructor(
         faceDao.insertFaces(faces)
     }
 
+    fun insertFace(face: FaceModel) {
+        faceDao.insertFace(face)
+    }
+
     fun updateFace(face: FaceModel) {
         faceDao.updateFace(face)
     }

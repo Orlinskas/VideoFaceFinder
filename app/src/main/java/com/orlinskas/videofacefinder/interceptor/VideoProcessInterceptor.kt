@@ -12,9 +12,11 @@ import com.google.android.gms.vision.face.FaceDetector
 import com.orlinskas.videofacefinder.data.enums.Settings
 import com.orlinskas.videofacefinder.data.model.FaceModel
 import com.orlinskas.videofacefinder.data.model.Frame
+import com.orlinskas.videofacefinder.data.model.Person
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
+import com.orlinskas.videofacefinder.data.repository.PersonsRepository
 import com.orlinskas.videofacefinder.systems.*
 import com.orlinskas.videofacefinder.systems.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.systems.FileSystem.toNumber
@@ -33,7 +35,8 @@ class VideoProcessInterceptor(
     private val faceDetector: FaceDetector,
     private val faceClassifier: TFLiteClassifier,
     private val frameRepository: FrameRepository,
-    private val faceRepository: FaceRepository
+    private val faceRepository: FaceRepository,
+    private val personsRepository: PersonsRepository
 ) {
 
     private var frameParams: FaceDataSimpleClassifier.Companion.FrameParams? = null
@@ -82,6 +85,8 @@ class VideoProcessInterceptor(
 
             val userFile = file ?: error("File is null")
             val filePath = userFile.getAbsolutePath(contentResolver) ?: error("Error convert to file from uri")
+
+            frameRepository.removeAllFrames()
 
             FileSystem.deleteFolder(FRAME_IMAGES_FOLDER_PATH)
             FileSystem.createFolder(FRAME_IMAGES_FOLDER_PATH)
@@ -160,17 +165,18 @@ class VideoProcessInterceptor(
 
                 if (facesOnFrame.isNotEmpty()) {
                     val faceModels = createFaceModel(frame, facesOnFrame, faceClassifier)
-                    frameRepository.updateFrame(frame.apply { faces = faceModels.map { it.id } })
+                    //frameRepository.updateFrame(frame.apply { faces = faceModels.map { it.id } })
                     faceModelsToSave.addAll(faceModels)
                 }
             }
 
-            frameRepository.removeAllFrames()
             frames.toMutableList().clear()
 
             Timber.d("Saving ${faceModelsToSave.size} faces.")
             faceRepository.removeAllFaces()
-            faceRepository.insertFaces(faceModelsToSave)
+            faceModelsToSave.forEach {
+                faceRepository.insertFace(it)
+            }
             faceModelsToSave.clear()
 
             Timber.d("Finish faces process, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
@@ -261,24 +267,24 @@ class VideoProcessInterceptor(
 
             val faceModels = faceRepository.getFaces()
 
-            FileSystem.deleteFolder(FACE_IMAGES_FOLDER_PATH)
-            FileSystem.createFolder(FACE_IMAGES_FOLDER_PATH)
-
-            faceModels.forEach { current ->
-                val bitmap = ImageSystem.decodeBitmapFromBase64(current.imageBase64)
-                FileSystem.createFileFrom(bitmap!!, FACE_IMAGES_FOLDER_PATH + "/${current.id}.png")
-            }
-
             val classifier = FaceDataSimpleClassifier(faceModels, frameParams)
             val result = classifier.run()
 
-            Timber.d("Found persons - ${result.keys.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
+            val persons = mutableListOf<Person>()
 
-            result.forEach {
-                Timber.d("Person - ${it.key}. \n Faces - ${it.value}")
+            result.forEach { (personIndex, facesIds) ->
+                val person = Person(
+                     id = personIndex,
+                     standardFaceBase64 = faceModels.find { facesIds.contains(it.id) }?.imageBase64,
+                     faces = facesIds
+                )
+
+                persons.add(person)
             }
 
-            // need save result
+            personsRepository.insertPersons(persons)
+
+            Timber.d("Found persons - ${result.keys.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
 
             callback.invoke(true)
         }

@@ -8,7 +8,10 @@ import com.orlinskas.videofacefinder.data.model.FaceModel
 interface FaceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertFaces(frames: List<FaceModel>)
+    fun insertFaces(faces: List<FaceModel>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertFace(face: FaceModel)
 
     @Update
     fun updateFace(face: FaceModel)

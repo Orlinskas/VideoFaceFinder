@@ -26,5 +26,4 @@ class FrameRepository @Inject constructor(
     fun removeAllFrames() {
         return frameDao.removeAllFrames()
     }
-
 }

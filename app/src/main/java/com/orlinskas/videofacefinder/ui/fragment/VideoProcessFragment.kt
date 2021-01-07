@@ -9,9 +9,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.databinding.ObservableBoolean
-import androidx.navigation.NavController
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.findNavController
 import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.FragmentVideoProcessBinding
 import com.orlinskas.videofacefinder.core.BaseFragment
