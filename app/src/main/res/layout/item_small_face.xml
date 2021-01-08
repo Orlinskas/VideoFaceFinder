@@ -1,0 +1,41 @@
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+    <data>
+
+        <variable
+            name="face"
+            type="com.orlinskas.videofacefinder.data.model.FaceModel" />
+    </data>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:layout_margin="@dimen/margin_half">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorFragmentBackground">
+
+            <ImageView
+                android:id="@+id/imagePerson"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_margin="@dimen/margin_half"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_baseline_account_circle_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:setImageFromBase64="@{face.imageBase64}" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</layout>

@@ -12,6 +12,7 @@ import com.orlinskas.videofacefinder.data.enums.Settings
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
+import com.orlinskas.videofacefinder.data.repository.PersonRepository
 import com.orlinskas.videofacefinder.interceptor.VideoProcessInterceptor
 import com.orlinskas.videofacefinder.tflite.TFLiteClassifier
 import com.orlinskas.videofacefinder.ui.viewstate.KEY_COMPRESS
@@ -34,6 +35,8 @@ class VideoProcessService: LifecycleService() {
     lateinit var frameRepository: FrameRepository
     @Inject
     lateinit var faceRepository: FaceRepository
+    @Inject
+    lateinit var personRepository: PersonRepository
 
     private var isForegroundStarted: Boolean = false
 
@@ -88,7 +91,8 @@ class VideoProcessService: LifecycleService() {
             faceDetector = faceDetector,
             faceClassifier = faceClassifier,
             frameRepository = frameRepository,
-            faceRepository = faceRepository
+            faceRepository = faceRepository,
+            personRepository = personRepository
         )
 
         if (intent != null) {

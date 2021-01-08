@@ -16,7 +16,7 @@ import com.orlinskas.videofacefinder.data.model.Person
 import com.orlinskas.videofacefinder.data.model.UserFile
 import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
-import com.orlinskas.videofacefinder.data.repository.PersonsRepository
+import com.orlinskas.videofacefinder.data.repository.PersonRepository
 import com.orlinskas.videofacefinder.systems.*
 import com.orlinskas.videofacefinder.systems.FileSystem.getAbsolutePath
 import com.orlinskas.videofacefinder.systems.FileSystem.toNumber
@@ -36,7 +36,7 @@ class VideoProcessInterceptor(
     private val faceClassifier: TFLiteClassifier,
     private val frameRepository: FrameRepository,
     private val faceRepository: FaceRepository,
-    private val personsRepository: PersonsRepository
+    private val personRepository: PersonRepository
 ) {
 
     private var frameParams: FaceDataSimpleClassifier.Companion.FrameParams? = null
@@ -267,6 +267,14 @@ class VideoProcessInterceptor(
 
             val faceModels = faceRepository.getFaces()
 
+            FileSystem.deleteFolder(FACE_IMAGES_FOLDER_PATH)
+            FileSystem.createFolder(FACE_IMAGES_FOLDER_PATH)
+
+            faceModels.forEach { current ->
+                val bitmap = ImageSystem.decodeBitmapFromBase64(current.imageBase64)
+                FileSystem.createFileFrom(bitmap!!, FACE_IMAGES_FOLDER_PATH + "/${current.id}.png")
+            }
+
             val classifier = FaceDataSimpleClassifier(faceModels, frameParams)
             val result = classifier.run()
 
@@ -276,13 +284,13 @@ class VideoProcessInterceptor(
                 val person = Person(
                      id = personIndex,
                      standardFaceBase64 = faceModels.find { facesIds.contains(it.id) }?.imageBase64,
-                     faces = facesIds
+                     faces = facesIds.toMutableList()
                 )
 
                 persons.add(person)
             }
 
-            personsRepository.insertPersons(persons)
+            personRepository.insertPersons(persons)
 
             Timber.d("Found persons - ${result.keys.size}, time ${(System.currentTimeMillis() - operationStartTime)}ms. ")
 

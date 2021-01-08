@@ -2,7 +2,7 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Base.AppTheme" parent="Theme.MaterialComponents.DayNight">
+    <style name="Base.AppTheme" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="colorPrimary">@color/colorPrimary</item>
@@ -33,26 +33,32 @@
 
     <style name="Text.ExtraLight" parent="Text" tools:ignore="UnusedResources">
         <item name="android:fontFamily">@font/source_sans_pro_extra_light</item>
+        <item name="fontFamily">@font/source_sans_pro_extra_light</item>
     </style>
 
     <style name="Text.Light" parent="Text" tools:ignore="UnusedResources">
         <item name="android:fontFamily">@font/source_sans_pro_light</item>
+        <item name="fontFamily">@font/source_sans_pro_light</item>
     </style>
 
     <style name="Text.Regular" parent="Text" tools:ignore="UnusedResources">
         <item name="android:fontFamily">@font/source_sans_pro_regular</item>
+        <item name="fontFamily">@font/source_sans_pro_regular</item>
     </style>
 
     <style name="Text.SemiBold" parent="Text">
         <item name="android:fontFamily">@font/source_sans_pro_semi_bold</item>
+        <item name="fontFamily">@font/source_sans_pro_semi_bold</item>
     </style>
 
     <style name="Text.Bold" parent="Text" tools:ignore="UnusedResources">
         <item name="android:fontFamily">@font/source_sans_pro_bold</item>
+        <item name="fontFamily">@font/source_sans_pro_bold</item>
     </style>
 
     <style name="Text.Black" parent="Text" tools:ignore="UnusedResources">
         <item name="android:fontFamily">@font/source_sans_pro_black</item>
+        <item name="fontFamily">@font/source_sans_pro_black</item>
     </style>
 
     <style name="Text.Title" parent="Text.SemiBold" tools:ignore="UnusedResources">

@@ -19,6 +19,9 @@ interface FaceDao {
     @Query("SELECT * FROM ${Tables.FACE}")
     fun getFaces(): List<FaceModel>
 
+    @Query("SELECT * FROM ${Tables.FACE} WHERE id IN (:ids)")
+    fun getFaces(ids: List<Long>): List<FaceModel>
+
     @Query("DELETE FROM ${Tables.FACE}")
     fun removeAllFaces()
 }

@@ -11,7 +11,7 @@ data class Person (
         @PrimaryKey(autoGenerate = true)
         val id: Long,
         val name: String = "Person $id",
-        val description: String = "",
-        val standardFaceBase64: String? = null,
-        val faces: List<Long>
+        var description: String = "",
+        var standardFaceBase64: String? = null,
+        var faces: MutableList<Long>
 )

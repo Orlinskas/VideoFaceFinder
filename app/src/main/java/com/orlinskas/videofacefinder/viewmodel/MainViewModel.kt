@@ -7,8 +7,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.orlinskas.videofacefinder.core.BaseViewModel
 import com.orlinskas.videofacefinder.data.enums.FileSystemState
+import com.orlinskas.videofacefinder.data.model.FaceModel
+import com.orlinskas.videofacefinder.data.model.Person
 import com.orlinskas.videofacefinder.data.repository.FaceRepository
 import com.orlinskas.videofacefinder.data.repository.FrameRepository
+import com.orlinskas.videofacefinder.data.repository.PersonRepository
 import com.orlinskas.videofacefinder.service.VideoProcessLiveData
 import com.orlinskas.videofacefinder.service.VideoProcessService
 import com.orlinskas.videofacefinder.systems.FileSystem.toFileModel
@@ -22,6 +25,7 @@ class MainViewModel @ViewModelInject constructor(
     private val context: Context,
     private val frameRepository: FrameRepository,
     private val faceRepository: FaceRepository,
+    private val personRepository: PersonRepository,
     var videoProcessLiveData: VideoProcessLiveData
 ) : BaseViewModel() {
 
@@ -50,5 +54,23 @@ class MainViewModel @ViewModelInject constructor(
 
     fun runVideoProcessing() {
         VideoProcessService.start(context, state.getCurrentBundle())
+    }
+
+    fun getLastPersons(): LiveData<List<Pair<Person, List<FaceModel>>>>
+            = MutableLiveData<List<Pair<Person, List<FaceModel>>>>().also { liveData ->
+
+        io {
+            val persons = personRepository.getAllPersons()
+
+            val personPairs = mutableListOf<Pair<Person, List<FaceModel>>>()
+
+            persons.forEach {
+                val faces = faceRepository.getFaces(it.faces)
+
+                personPairs.add(Pair(it, faces))
+            }
+
+            liveData.postValue(personPairs)
+        }
     }
 }

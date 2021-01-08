@@ -26,6 +26,10 @@ class FaceRepository @Inject constructor(
         return faceDao.getFaces()
     }
 
+    fun getFaces(ids: List<Long>): List<FaceModel> {
+        return faceDao.getFaces(ids)
+    }
+
     fun removeAllFaces() {
         faceDao.removeAllFaces()
     }

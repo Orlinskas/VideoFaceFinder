@@ -8,6 +8,7 @@
     <color name="colorTextSecondary">#B8B8B8</color>
 
     <color name="colorFragmentBackground">#1B1B1E</color>
+    <color name="colorListBackground">#101010</color>
     <color name="colorFragmentBackgroundAlpha">#B51B1B1E</color>
 
     <color name="colorStatusBar">#000000</color>

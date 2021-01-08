@@ -4,7 +4,7 @@ import com.orlinskas.videofacefinder.data.AppDatabase
 import com.orlinskas.videofacefinder.data.model.Person
 import javax.inject.Inject
 
-class PersonsRepository @Inject constructor(
+class PersonRepository @Inject constructor(
         appDatabase: AppDatabase
 ) {
 
