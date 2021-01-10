@@ -12,7 +12,8 @@ class FaceDataSimpleClassifier (
         private val isCalculateFacePosition: Boolean = false,
         private val isCalculateFaceMovement: Boolean = true
 ) {
-    
+
+    private var rootFaces: MutableList<Face> = mutableListOf()
     private var rootData: MutableMap<Long, MutableList<Face>> = mutableMapOf()
     private val potentialProblemFaces: MutableSet<Long> = mutableSetOf()
     private var personIndex = 0L
@@ -41,6 +42,10 @@ class FaceDataSimpleClassifier (
                     val value = FaceRecognitionSystem.compare(currentFace.data, nextFace.data)
                     currentFace.compareMap[nextFace.id] = value
 
+//                    if (value < MAX_IDENTICAL_FACE_VALUE) {
+//                        currentFace.identicalFacesCount++
+//                    }
+
                     if (value < currentFace.lastNearestValue) {
                         currentFace.lastNearestValue = value
                         currentFace.lastNearestFace = nextFace.id
@@ -53,6 +58,8 @@ class FaceDataSimpleClassifier (
             val faces = faceModels.filter { it.frameId == key }
             rootData[key] = faces.toMutableList()
         }
+
+        rootFaces.addAll(faceModels)
     }
 
     fun run(): Map<Long, List<Long>> {
@@ -161,6 +168,44 @@ class FaceDataSimpleClassifier (
         return personToFacesMap
     }
 
+    fun runAlternative(): Map<Long, List<Long>> {
+        val operationStartTime = System.currentTimeMillis()
+
+        rootFaces.forEach { face ->
+            val identicalCount = face.compareMap.map { entry -> entry.value }.filter { it < MAX_IDENTICAL_FACE_VALUE }.size
+            face.identicalFacesCount = identicalCount
+        }
+
+        var personIndex = 1L
+        val personToFacesMap = mutableMapOf<Long, List<Long>>()
+
+        val sortedFaces = rootFaces.sortedByDescending { it.identicalFacesCount }
+
+        getNextIdenticalGroup(sortedFaces) {
+            personToFacesMap[personIndex] = it
+            personIndex++
+        }
+
+        Timber.d("Iterations - $iterationCount")
+        Timber.d("Faces wit potential problem - ${potentialProblemFaces.size}, list - $potentialProblemFaces")
+        Timber.d("Persons: \n $personToFacesMap")
+        Timber.d("Found ${personToFacesMap.keys.size} persons, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+
+        return personToFacesMap
+    }
+
+    private fun getNextIdenticalGroup(faces: List<Face>, callback: (List<Long>) -> Unit) {
+        val personFaces = mutableListOf<Long>()
+
+        val face = faces.firstOrNull() ?: return
+
+        personFaces.add(face.id)
+        personFaces.addAll(face.compareMap.filter { it.value < MAX_IDENTICAL_FACE_VALUE }.map { it.key })
+
+        callback.invoke(personFaces)
+        getNextIdenticalGroup(faces.filterNot { personFaces.contains(it.id) }, callback)
+    }
+
     private fun getNextPersonFaces(faceGroups: List<FaceGroup>, groupPacks: Set<Set<Long>>, callback: (List<Long>) -> Unit) {
         val personFaces = mutableListOf<Long>()
 
@@ -260,6 +305,7 @@ class FaceDataSimpleClassifier (
                 var frameId: Long?,
                 var isPotentialProblem: Boolean = false,
                 var compareMap: MutableMap<Long, Float> = mutableMapOf(),
+                var identicalFacesCount: Int = 0,
                 var lastNearestValue: Float = Float.MAX_VALUE,
                 var lastNearestFace: Long? = null
         ) {

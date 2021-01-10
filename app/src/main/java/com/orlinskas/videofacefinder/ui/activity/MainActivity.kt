@@ -7,6 +7,8 @@ import androidx.navigation.findNavController
 import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.ActivityMainBinding
 import com.orlinskas.videofacefinder.core.BaseActivity
+import com.orlinskas.videofacefinder.extensions.singleObserve
+import com.orlinskas.videofacefinder.service.VideoProcessService
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -53,6 +55,21 @@ class MainActivity : BaseActivity() {
                     true
                 }
                 else -> false
+            }
+        }
+
+        viewModel.videoProcessLiveData.singleObserve(this) { state ->
+            if (state == VideoProcessService.State.SUCCESS) {
+                binding.bottomNavigation.selectedItemId = R.id.results
+
+                when(navController.currentDestination?.id) {
+                    R.id.videoProcessFragment -> {
+                        navController.navigate(R.id.videoResultsFragment, null, navOptions.build())
+                    }
+                    R.id.personsListFragment -> {
+                        navController.navigate(R.id.videoResultsFragment, null, navOptions.build())
+                    }
+                }
             }
         }
     }

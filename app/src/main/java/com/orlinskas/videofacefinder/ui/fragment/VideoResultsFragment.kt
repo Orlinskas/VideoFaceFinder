@@ -7,6 +7,7 @@ import com.example.videofacefinder.R
 import com.example.videofacefinder.databinding.FragmentVideoResultsBinding
 import com.orlinskas.videofacefinder.core.BaseFragment
 import com.orlinskas.videofacefinder.extensions.singleObserve
+import com.orlinskas.videofacefinder.service.VideoProcessService
 import com.orlinskas.videofacefinder.ui.adapter.PersonAdapter
 import com.orlinskas.videofacefinder.ui.adapter.SmallFacesAdapter
 import com.orlinskas.videofacefinder.viewmodel.MainViewModel
@@ -37,6 +38,12 @@ class VideoResultsFragment : BaseFragment() {
 
         viewModel.getLastPersons().singleObserve(viewLifecycleOwner) {
             adapter.data = it
+        }
+
+        viewModel.videoProcessLiveData.singleObserve(this) { state ->
+            if (state == VideoProcessService.State.SUCCESS) {
+                adapter.notifyDataSetChanged()
+            }
         }
     }
 }
