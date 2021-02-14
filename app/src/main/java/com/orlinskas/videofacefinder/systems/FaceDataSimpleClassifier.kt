@@ -4,6 +4,7 @@ import android.graphics.Rect
 import androidx.annotation.Keep
 import com.orlinskas.videofacefinder.data.model.FaceModel
 import com.orlinskas.videofacefinder.data.model.Frame
+import com.orlinskas.videofacefinder.tflite.TFLiteClassifier
 import timber.log.Timber
 
 class FaceDataSimpleClassifier (
@@ -14,14 +15,14 @@ class FaceDataSimpleClassifier (
 ) {
 
     private var rootFaces: MutableList<Face> = mutableListOf()
-    private var rootData: MutableMap<Long, MutableList<Face>> = mutableMapOf()
+    private var frameToFacesMap: MutableMap<Long, MutableList<Face>> = mutableMapOf()
     private val potentialProblemFaces: MutableSet<Long> = mutableSetOf()
     private var personIndex = 0L
     private var iterationCount = 0L
 
     init {
         val frames = data.map { it.frame }.toSortedSet()
-        rootData = frames.associateBy({ it }, { mutableListOf<Face>() }).toMutableMap()
+        frameToFacesMap = frames.associateBy({ it }, { mutableListOf<Face>() }).toMutableMap()
 
         val faceModels = data.map {
             Face(
@@ -42,10 +43,6 @@ class FaceDataSimpleClassifier (
                     val value = FaceRecognitionSystem.compare(currentFace.data, nextFace.data)
                     currentFace.compareMap[nextFace.id] = value
 
-//                    if (value < MAX_IDENTICAL_FACE_VALUE) {
-//                        currentFace.identicalFacesCount++
-//                    }
-
                     if (value < currentFace.lastNearestValue) {
                         currentFace.lastNearestValue = value
                         currentFace.lastNearestFace = nextFace.id
@@ -54,9 +51,9 @@ class FaceDataSimpleClassifier (
             }
         }
 
-        rootData.forEach { (key, _) ->
+        frameToFacesMap.forEach { (key, _) ->
             val faces = faceModels.filter { it.frameId == key }
-            rootData[key] = faces.toMutableList()
+            frameToFacesMap[key] = faces.toMutableList()
         }
 
         rootFaces.addAll(faceModels)
@@ -68,32 +65,35 @@ class FaceDataSimpleClassifier (
         var faceGroupIndex = 0L
         val faceGroups = mutableListOf<FaceGroup>()
 
-        val frameIds = rootData.keys.sortedBy { it }
+        val frameIds = frameToFacesMap.keys.sortedBy { it }
         frameIds.forEachIndexed { index, currentFrameId ->
 
             if (index == frameIds.lastIndex) {
                 return@forEachIndexed
             }
 
-            val currentFrameFaces = rootData[currentFrameId]
+            val currentFrameFaces = frameToFacesMap[currentFrameId]
             currentFrameFaces?.forEach { currentFrameFace ->
 
                 if (currentFrameFace.groupId == null) {
 
-                    val faceGroup = FaceGroup(faceGroupIndex, mutableListOf(), mutableListOf()).apply {
-                        //potentialProblemFaces.remove(currentFrameFace.id)
+                    val faceGroup = FaceGroup(
+                        faceGroupIndex,
+                        mutableListOf(),
+                        mutableListOf()
+                    ).apply {
                         faces.add(currentFrameFace)
                         frames.add(currentFrameId)
-                        faceGroupIndex++
                     }
 
+                    faceGroupIndex++
                     currentFrameFace.groupId = faceGroup.id
                     faceGroups.add(faceGroup)
 
                     val nextFrames = frameIds.subList(index + 1, frameIds.lastIndex)
                     nextFrames.forEachIndexed frame@{ frameIndex, nextFrameId ->
 
-                        val nextFrameFaces = rootData[nextFrameId]
+                        val nextFrameFaces = frameToFacesMap[nextFrameId]
                         nextFrameFaces?.forEachIndexed { faceIndex, nextFrameFace ->
 
                             if (nextFrameFace.groupId == null) {
@@ -194,6 +194,93 @@ class FaceDataSimpleClassifier (
         return personToFacesMap
     }
 
+    fun runAlternativeAlternative(): Map<Long, List<Long>> {
+        val operationStartTime = System.currentTimeMillis()
+
+        var faceGroupIndex = 0L
+        val faceGroups = mutableListOf<FaceGroup>()
+
+        val frameIds = frameToFacesMap.keys.sortedBy { it }
+        frameIds.forEachIndexed { index, currentFrameId ->
+
+            if (index == frameIds.lastIndex) {
+                return@forEachIndexed
+            }
+
+            val currentFrameFaces = frameToFacesMap[currentFrameId]
+            currentFrameFaces?.forEach { currentFrameFace ->
+
+                if (currentFrameFace.groupId == null) {
+
+                    val faceGroup = FaceGroup(
+                        faceGroupIndex,
+                        mutableListOf(),
+                        mutableListOf()
+                    ).apply {
+                        faces.add(currentFrameFace)
+                        frames.add(currentFrameId)
+                    }
+
+                    faceGroupIndex++
+                    currentFrameFace.groupId = faceGroup.id
+                    faceGroups.add(faceGroup)
+
+                    val nextFrames = frameIds.subList(index + 1, frameIds.lastIndex)
+                    nextFrames.forEachIndexed frame@{ frameIndex, nextFrameId ->
+
+                        val nextFrameFaces = frameToFacesMap[nextFrameId]
+                        nextFrameFaces?.forEachIndexed { faceIndex, nextFrameFace ->
+
+                            if (nextFrameFace.groupId == null) {
+                                iterationCount++
+
+                                if (faceGroup.isIdenticalTo(nextFrameFace)) {
+                                    potentialProblemFaces.remove(nextFrameFace.id)
+                                    nextFrameFace.groupId = faceGroup.id
+                                    faceGroup.faces.add(nextFrameFace)
+                                    faceGroup.frames.add(nextFrameId)
+                                    return@frame
+                                } else {
+                                    potentialProblemFaces.add(nextFrameFace.id)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val personToFacesMap = mutableMapOf<Long, List<Long>>()
+
+        faceGroups.forEachIndexed { index, faceGroup ->
+            personToFacesMap[personIndex] = faceGroup.faces.map { it.id }
+            personIndex++
+        }
+
+//        faceGroups.forEachIndexed { index, group ->
+//            val person = mutableListOf<Long>()
+//
+//            faceGroups.forEach { compareGroup ->
+//                person.addAll(group.faces.map { it.id })
+//
+//                if (group.isCompareTo(compareGroup)) {
+//                    Timber.d("Group ${group.id} is compare to group ${compareGroup.id}")
+//                    person.addAll(compareGroup.faces.map { it.id })
+//                }
+//            }
+//
+//            personToFacesMap[personIndex] = person
+//            personIndex++
+//        }
+
+        Timber.d("Iterations - $iterationCount")
+        Timber.d("Faces wit potential problem - ${potentialProblemFaces.size}, list - $potentialProblemFaces")
+        Timber.d("Persons: \n $personToFacesMap")
+        Timber.d("Found ${personToFacesMap.keys.size} persons, time - ${(System.currentTimeMillis() - operationStartTime)}ms.")
+
+        return personToFacesMap
+    }
+
     private fun getNextIdenticalGroup(faces: List<Face>, callback: (List<Long>) -> Unit) {
         val personFaces = mutableListOf<Long>()
 
@@ -271,6 +358,22 @@ class FaceDataSimpleClassifier (
         return false//first.size == compareFaces.size
     }
 
+    private fun FaceGroup.getAverageFaceData(): FloatArray {
+        val result = FloatArray(TFLiteClassifier.OUTPUT_SIZE)
+
+        for (index in 0 until TFLiteClassifier.OUTPUT_SIZE) {
+            val faceDatasOnIndex = this.faces.map { it.data[index] }
+            result[index] = faceDatasOnIndex.average().toFloat()
+        }
+
+        return result
+    }
+
+    private fun FaceGroup.isCompareTo(compareFaceGroup: FaceGroup): Boolean {
+        val value = FaceRecognitionSystem.compare(this.getAverageFaceData(), compareFaceGroup.getAverageFaceData())
+        return value > MAX_IDENTICAL_FACE_VALUE
+    }
+
     private fun Pair<Long, Long>.getLinked(list: List<Pair<Long, Long>>, callback: (Pair<Long, Long>) -> Unit) {
 
         list.forEach { pair ->
@@ -327,11 +430,12 @@ class FaceDataSimpleClassifier (
 
         @Keep
         data class FaceGroup(
-                val id: Long,
-                val faces: MutableList<Face>,
-                val frames: MutableList<Long>
+            val id: Long,
+            val faces: MutableList<Face>,
+            val frames: MutableList<Long>
         )
 
+        @Keep
         data class FrameParams(
                 val dimension: Pair<Int, Int>,
                 val frameRate: Double

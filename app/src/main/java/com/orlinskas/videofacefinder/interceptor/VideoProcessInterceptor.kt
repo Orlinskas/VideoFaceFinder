@@ -276,7 +276,7 @@ class VideoProcessInterceptor(
             }
 
             val classifier = FaceDataSimpleClassifier(faceModels, frameParams)
-            val result = classifier.run()
+            val result = classifier.runAlternativeAlternative()
 
             val persons = mutableListOf<Person>()
 
